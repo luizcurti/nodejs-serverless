@@ -1,13 +1,12 @@
 import type { AWS } from '@serverless/typescript';
 
-
 const serverlessConfiguration: AWS = {
   service: 'ignitecertificate',
-  frameworkVersion: '2',
+  frameworkVersion: '4',
   plugins: ['serverless-esbuild', 'serverless-dynamodb-local', 'serverless-offline'],
   provider: {
     name: 'aws',
-    runtime: 'nodejs14.x',
+    runtime: 'nodejs20.x',
     region: 'eu-west-1',
     apiGateway: {
       minimumCompressionSize: 1024,
@@ -64,7 +63,7 @@ const serverlessConfiguration: AWS = {
       minify: false,
       sourcemap: true,
       exclude: ['aws-sdk'],
-      target: 'node14',
+      target: 'node20',
       define: { 'require.resolve': undefined },
       platform: 'node',
       concurrency: 10,
