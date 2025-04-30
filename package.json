@@ -1,0 +1,35 @@
+{
+  "name": "certificate",
+  "version": "1.0.0",
+  "description": "Serverless aws-nodejs-typescript template",
+  "main": "serverless.ts",
+  "scripts": {
+    "dev": "serverless offline",
+    "dynamodb:start": "serverless dynamodb start",
+    "dynamodb:install": "serverless dynamodb install",
+    "deploy": "npx serverless deploy -v",
+    "build": "npx tsc" 
+  },
+  "dependencies": {
+    "@middy/core": "^6.1.6",
+    "@middy/http-json-body-parser": "^6.1.6",
+    "chrome-aws-lambda": "^10.1.0",
+    "dayjs": "^1.11.13",
+    "handlebars": "^4.7.8",
+    "puppeteer-core": "^24.6.0"
+  },
+  "devDependencies": {
+    "@serverless/typescript": "^4.11.1",
+    "@types/aws-lambda": "^8.10.148",
+    "@types/node": "^22.14.0",
+    "esbuild": "^0.25.2",
+    "json-schema-to-ts": "^3.1.1",
+    "serverless": "^4.11.1",
+    "serverless-dynamodb-local": "^0.2.40",
+    "serverless-esbuild": "^1.55.0",
+    "serverless-offline": "^14.4.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  }
+}

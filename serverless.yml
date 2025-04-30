@@ -1,0 +1,9 @@
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+    install:
+      version: 2022-08-22
