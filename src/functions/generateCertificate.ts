@@ -1,11 +1,12 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { document } from '../utils/dynamodbClient';
+import { QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { compile } from 'handlebars';
 import dayjs from 'dayjs';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import chromium from 'chrome-aws-lambda';
-import { S3 } from 'aws-sdk';
 
 interface ICreateCertificate {
   id: string;
@@ -29,36 +30,49 @@ const compileTemplate = async (data: ITemplate) => {
   return compile(html)(data);
 };
 
+const createS3Client = () => {
+  const isOffline = process.env.IS_OFFLINE;
+  const endpoint = process.env.S3_ENDPOINT || 'http://localhost:4566';
+  
+  return new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+    ...(isOffline && {
+      endpoint,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test',
+      },
+    }),
+  });
+};
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   const { id, name, grade } = JSON.parse(event.body) as ICreateCertificate;
 
-  const response = await document
-    .query({
-      TableName: 'users_certificate',
-      KeyConditionExpression: 'id = :id',
-      ExpressionAttributeValues: {
-        ':id': id,
-      },
-    })
-    .promise();
+  const response = await document.send(new QueryCommand({
+    TableName: 'users_certificate',
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': id,
+    },
+  }));
 
-  const userAlreadyExists = response.Items[0];
+  const userAlreadyExists = response.Items?.[0];
 
   if (!userAlreadyExists) {
-    await document
-      .put({
-        TableName: 'users_certificate',
-        Item: {
-          id,
-          name,
-          grade,
-          created_at: new Date().getTime(),
-        },
-      })
-      .promise();
+    await document.send(new PutCommand({
+      TableName: 'users_certificate',
+      Item: {
+        id,
+        name,
+        grade,
+        created_at: new Date().getTime(),
+      },
+    }));
   }
 
-  const medalPath = join(process.cwd(), 'src', 'templates', 'selo.png');
+  const medalPath = join(process.cwd(), 'src', 'templates', 'stamp.png');
   const medal = readFileSync(medalPath, 'base64');
 
   const data: ITemplate = {
@@ -90,23 +104,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   await browser.close();
 
-  const s3 = new S3();
+  const s3 = createS3Client();
 
-  // await s3
-  //   .createBucket({
-  //     Bucket: 'certificadoignite2021',
-  //   })
-  //   .promise();
-
-  await s3
-    .putObject({
-      Bucket: 'certificadoignite2021',
-      Key: `${id}.pdf`,
-      ACL: 'public-read',
-      Body: pdf,
-      ContentType: 'application/pdf',
-    })
-    .promise();
+  await s3.send(new PutObjectCommand({
+    Bucket: 'certificadoignite2021',
+    Key: `${id}.pdf`,
+    Body: pdf,
+    ContentType: 'application/pdf',
+  }));
 
   return {
     statusCode: 201,

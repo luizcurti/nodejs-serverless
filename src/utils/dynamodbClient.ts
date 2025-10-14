@@ -1,16 +1,22 @@
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-const options = {
-  region: 'localhost',
-  endpoint: 'http://localhost:8000',
-  accessKeyId: 'x',
-  secretAccessKey: 'x',
+const createDynamoDBClient = () => {
+  const isOffline = process.env.IS_OFFLINE;
+  const endpoint = process.env.DYNAMODB_ENDPOINT || 'http://localhost:4566';
+  
+  const client = new DynamoDBClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+    ...(isOffline && {
+      endpoint,
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test',
+      },
+    }),
+  });
+
+  return DynamoDBDocumentClient.from(client);
 };
 
-const isOffline = () => {
-  return process.env.IS_OFFLINE;
-};
-
-export const document = isOffline()
-  ? new DynamoDB.DocumentClient(options)
-  : new DynamoDB.DocumentClient();
+export const document = createDynamoDBClient();

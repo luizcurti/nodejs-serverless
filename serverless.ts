@@ -4,6 +4,9 @@ const serverlessConfiguration: AWS = {
   service: 'ignitecertificate',
   frameworkVersion: '4',
   plugins: ['serverless-esbuild', 'serverless-dynamodb-local', 'serverless-offline'],
+  build: {
+    esbuild: false,
+  },
   provider: {
     name: 'aws',
     runtime: 'nodejs20.x',
