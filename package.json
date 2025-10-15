@@ -17,7 +17,6 @@
     "test:watch": "jest --config jest.unit.config.js --watch",
     "test:coverage": "jest --config jest.unit.config.js --coverage",
     "test:integration": "jest --config jest.integration.config.js",
-    "test:all": "jest",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
