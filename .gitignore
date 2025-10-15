@@ -2,7 +2,6 @@ node_modules
 build/*
 coverage
 db/
-yarn.lock
-package-lock
+package-lock.json
 dist
 .DS_Store

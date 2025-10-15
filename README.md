@@ -459,10 +459,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📝 Recent Updates
 
+- ✅ **GitHub Actions CI/CD** automated testing and linting on every push
 - ✅ **100% test coverage** achieved for main function files
 - ✅ **26 comprehensive unit tests** (17 generateCertificate + 9 verifyCertificate)
 - ✅ **Certificate template translated to English**
 - ✅ **Integration tests** with real AWS services via LocalStack
 - ✅ **ESLint v9** with flat configuration
 - ✅ **TypeScript strict mode** enabled for type safety
+- ✅ **Yarn lock file** committed for consistent dependencies
 - ✅ Separated unit and integration test configurations
