@@ -10,6 +10,15 @@ interface IUserCertificate {
 }
 
 export const handler: APIGatewayProxyHandler = async (event) => {
+  if (!event.pathParameters?.id) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        message: 'Certificate ID is required',
+      }),
+    };
+  }
+  
   const { id } = event.pathParameters;
 
   const response = await document.send(new QueryCommand({

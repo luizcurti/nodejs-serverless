@@ -10,7 +10,7 @@ process.env.S3_ENDPOINT = 'http://localhost:4566';
 
 // Wait for LocalStack to be ready
 const waitForLocalStack = async () => {
-  const maxRetries = 5; // Reduced from 30 to 5
+  const maxRetries = 15; 
   let retries = 0;
   
   const client = new DynamoDBClient({
@@ -41,11 +41,11 @@ const waitForLocalStack = async () => {
     } catch (error) {
       retries++;
       console.log(`Waiting for LocalStack... (${retries}/${maxRetries})`);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 2000ms to 1000ms
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Increased back to 2000ms
     }
   }
   
-  throw new Error('LocalStack is not ready after 10 seconds. Please start LocalStack with: yarn docker:up');
+  throw new Error('LocalStack is not ready after 30 seconds. Please start LocalStack with: yarn docker:up');
 };
 
 export { waitForLocalStack };

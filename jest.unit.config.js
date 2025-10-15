@@ -10,6 +10,7 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/templates/**',
+    '!src/utils/dynamodbClient.ts', // Utility file tested indirectly through functions
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],

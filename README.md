@@ -15,6 +15,7 @@ This project was developed with the following technologies:
 - **[Puppeteer](https://github.com/puppeteer/puppeteer)** - PDF generation
 - **[Handlebars](https://handlebarsjs.com/)** - Template engine
 - **[Jest](https://jestjs.io/)** - Testing framework
+- **[ESLint](https://eslint.org/)** - Code linting and formatting
 - **[Docker](https://www.docker.com/)** - Containerization
 - **[LocalStack](https://localstack.cloud/)** - Local AWS services
 
@@ -64,6 +65,17 @@ This service provides two main functionalities:
    - API: `http://localhost:3000`
    - DynamoDB Admin: `http://localhost:8001`
 
+6. **Test the API**
+   ```bash
+   # Generate a certificate
+   curl -X POST http://localhost:3000/dev/generateCertificate \
+     -H "Content-Type: application/json" \
+     -d '{"id": "test123", "name": "John Doe", "grade": "A+"}'
+   
+   # Verify a certificate
+   curl http://localhost:3000/dev/verifyCertificate/test123
+   ```
+
 ### Alternative: Local Development without Docker
 
 1. **Install dependencies**
@@ -88,10 +100,20 @@ This service provides two main functionalities:
 
 ## 🧪 Testing
 
+### Code Quality
+```bash
+# Run ESLint to check code quality
+yarn lint
+
+# Fix linting issues automatically
+yarn lint:fix
+```
+
 ### Unit Tests
 ```bash
-# Run unit tests
+# Run unit tests (default, fast)
 yarn test
+yarn test:unit
 
 # Run tests in watch mode
 yarn test:watch
@@ -107,12 +129,16 @@ yarn docker:up
 
 # Run integration tests
 yarn test:integration
+
+# Run all tests (unit + integration)
+yarn test:all
 ```
 
 ### Test Structure
-- **Unit tests**: Located in `tests/unit/`
-- **Integration tests**: Located in `tests/integration/`
-- **Test configuration**: `jest.config.js` and `jest.integration.config.js`
+- **Unit tests**: Located in `tests/unit/` - Fast tests without external dependencies (~2s)
+- **Integration tests**: Located in `tests/integration/` - Full end-to-end tests with LocalStack (~30s)
+- **Test configurations**: `jest.unit.config.js`, `jest.integration.config.js`, and `jest.config.js`
+- **Coverage reports**: Generated in `coverage/` directory with HTML reports
 
 ## 📡 API Endpoints
 
@@ -209,7 +235,8 @@ The application uses the following environment variables:
 ├── localstack-init/        # LocalStack initialization
 ├── docker-compose.yml      # Docker services
 ├── serverless.ts          # Serverless configuration
-├── jest.config.js         # Jest configuration
+├── jest.*.config.js       # Jest configurations
+├── eslint.config.js       # ESLint configuration
 └── package.json           # Dependencies and scripts
 ```
 
@@ -223,7 +250,7 @@ yarn docker:up
 yarn docker:down
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Access LocalStack container
 docker exec -it certificate-localstack bash
@@ -247,10 +274,13 @@ yarn lint
 # Fix linting issues
 yarn lint:fix
 
-# Run all tests
+# Run unit tests (default)
 yarn test
 
-# Run integration tests
+# Run all tests (unit + integration)
+yarn test:all
+
+# Run integration tests (requires LocalStack)
 yarn test:integration
 
 # Generate test coverage
@@ -288,10 +318,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Common Issues
 
-1. **LocalStack not starting**: Ensure Docker is running and ports 4566, 8001 are available
-2. **DynamoDB connection errors**: Check if LocalStack is running and properly initialized
-3. **PDF generation fails**: Ensure Puppeteer dependencies are installed
-4. **Tests failing**: Make sure LocalStack is running for integration tests
+1. **LocalStack not starting**: 
+   - Ensure Docker is running and ports 4566, 8001 are available
+   - Try `docker compose down` then `docker compose up -d`
+   - Check logs with `docker compose logs localstack`
+
+2. **DynamoDB connection errors**: 
+   - Verify LocalStack is healthy: `docker ps` (should show "healthy" status)
+   - Check table creation: `docker exec certificate-localstack awslocal dynamodb list-tables`
+
+3. **PDF generation fails**: 
+   - Ensure Puppeteer dependencies are installed
+   - For integration tests, make sure LocalStack is running first
+
+4. **Tests failing**: 
+   - Unit tests should work without LocalStack
+   - Integration tests require: `yarn docker:up` first
+   - ESLint issues: Run `yarn lint:fix` to auto-fix code style issues
+
+5. **TypeScript build errors**:
+   - Run `yarn build` to check for type errors
+   - Most errors are automatically fixed with `skipLibCheck: true` in tsconfig.json
 
 ### Getting Help
 

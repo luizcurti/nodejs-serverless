@@ -24,7 +24,7 @@ describe('Certificate Integration Tests', () => {
     });
     
     docClient = DynamoDBDocumentClient.from(client);
-  }, 15000); // Reduced from 60000ms to 15000ms
+  }, 45000); // Increased from 15000ms to 45000ms to allow LocalStack setup
 
   beforeEach(async () => {
     // Clean up test data

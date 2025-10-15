@@ -48,6 +48,15 @@ const createS3Client = () => {
 };
 
 export const handler: APIGatewayProxyHandler = async (event) => {
+  if (!event.body) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        message: 'Request body is required',
+      }),
+    };
+  }
+  
   const { id, name, grade } = JSON.parse(event.body) as ICreateCertificate;
 
   const response = await document.send(new QueryCommand({
@@ -99,7 +108,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     landscape: true,
     printBackground: true,
     preferCSSPageSize: true,
-    path: process.env.IS_OFFLINE ? './certificate.pdf' : null,
+    path: process.env.IS_OFFLINE ? './certificate.pdf' : undefined,
   });
 
   await browser.close();
