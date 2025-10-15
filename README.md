@@ -1,5 +1,10 @@
 # 📜 Certificate Generation Service
 
+[![CI](https://github.com/luizcurti/nodejs-serverless/actions/workflows/ci.yml/badge.svg)](https://github.com/luizcurti/nodejs-serverless/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](./coverage/lcov-report/index.html)
+[![Node](https://img.shields.io/badge/node-20.x-green.svg)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A serverless certificate generation and verification service built with AWS Lambda, DynamoDB, and S3.
 
 ## 🚀 Technologies
@@ -18,6 +23,7 @@ This project was developed with the following technologies:
 - **[ESLint](https://eslint.org/)** - Code linting and formatting
 - **[Docker](https://www.docker.com/)** - Containerization
 - **[LocalStack](https://localstack.cloud/)** - Local AWS services
+- **[GitHub Actions](https://github.com/features/actions)** - CI/CD automation
 
 ## 📋 Project Overview
 
@@ -263,6 +269,9 @@ The application uses the following environment variables:
 │   └── init.sh            # Creates DynamoDB tables and S3 buckets
 ├── coverage/              # Test coverage reports (generated)
 │   └── lcov-report/       # HTML coverage reports
+├── .github/
+│   └── workflows/
+│       └── ci.yml         # GitHub Actions CI/CD pipeline
 ├── docker-compose.yml      # Docker services configuration
 ├── serverless.ts          # Serverless Framework configuration (TypeScript)
 ├── serverless.yml         # Generated serverless config
@@ -342,7 +351,37 @@ yarn test:coverage
 open coverage/lcov-report/index.html
 ```
 
-## 📊 Monitoring and Debugging
+## � CI/CD
+
+### GitHub Actions
+
+This project uses GitHub Actions for continuous integration. The CI pipeline automatically runs on every push and pull request to `main` and `develop` branches.
+
+**Workflow includes:**
+- ✅ Install dependencies
+- ✅ Run ESLint checks
+- ✅ Run unit tests with coverage
+- ✅ Upload coverage reports to Codecov (optional)
+
+**Configuration file**: `.github/workflows/ci.yml`
+
+**View CI status**: Check the badge at the top of this README or visit the [Actions tab](https://github.com/luizcurti/nodejs-serverless/actions)
+
+### Running CI locally
+
+You can simulate the CI pipeline locally:
+```bash
+# Install dependencies
+yarn install --frozen-lockfile
+
+# Run linter
+yarn lint
+
+# Run tests with coverage
+yarn test:coverage
+```
+
+## �📊 Monitoring and Debugging
 
 ### LocalStack Services
 - **Health Check**: `http://localhost:4566/_localstack/health`
