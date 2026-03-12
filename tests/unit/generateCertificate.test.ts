@@ -102,9 +102,12 @@ describe('generateCertificate', () => {
     const mockContext = {};
     const mockCallback = jest.fn();
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow();
+    const result = await handler(mockEvent, mockContext, mockCallback);
+
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toEqual({
+      message: 'Invalid JSON in request body',
+    });
   });
 
   it('should generate certificate for new user', async () => {
@@ -308,17 +311,12 @@ describe('generateCertificate', () => {
     const mockContext = {};
     const mockCallback = jest.fn();
 
-    // Mock DynamoDB operations
-    mockDocumentSendGenerate.mockResolvedValueOnce({ Items: [] });
-    mockDocumentSendGenerate.mockResolvedValueOnce({});
-
-    // Mock S3 upload
-    mockS3Send.mockResolvedValue({});
-
     const result = await handler(mockEvent, mockContext, mockCallback);
-    
-    // The function should still work but with undefined values
-    expect(result.statusCode).toBe(201);
+
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toEqual({
+      message: 'id, name and grade are required',
+    });
   });
 
   it('should handle different offline modes', async () => {

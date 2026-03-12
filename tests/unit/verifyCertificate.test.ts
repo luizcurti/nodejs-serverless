@@ -183,7 +183,7 @@ describe('verifyCertificate', () => {
 
     expect(result!.statusCode).toBe(404);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado não encontrado',
+      message: 'Certificate not found',
     });
   });
 
