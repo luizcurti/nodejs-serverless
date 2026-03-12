@@ -70,7 +70,7 @@ describe('Certificate Integration Tests', () => {
       expect((result as any).statusCode).toBe(201);
       
       const responseBody = JSON.parse((result as any).body);
-      expect(responseBody.message).toBe('Certificado criado com sucesso');
+      expect(responseBody.message).toBe('Certificate created successfully');
       expect(responseBody.url).toContain('integration-test-123.pdf');
     }, 30000);
 
@@ -104,10 +104,10 @@ describe('Certificate Integration Tests', () => {
       );
 
       expect(result).toBeDefined();
-      expect((result as any).statusCode).toBe(201);
+      expect((result as any).statusCode).toBe(200);
       
       const responseBody = JSON.parse((result as any).body);
-      expect(responseBody.message).toBe('Certificado válido');
+      expect(responseBody.message).toBe('Valid certificate');
       expect(responseBody.name).toBe('Integration Test User');
       expect(responseBody.url).toContain('integration-test-123.pdf');
     }, 30000);
@@ -126,10 +126,10 @@ describe('Certificate Integration Tests', () => {
       );
 
       expect(result).toBeDefined();
-      expect((result as any).statusCode).toBe(400);
+      expect((result as any).statusCode).toBe(404);
       
       const responseBody = JSON.parse((result as any).body);
-      expect(responseBody.message).toBe('Certificado inválido');
+      expect(responseBody.message).toBe('Certificate not found');
     }, 15000);
   });
 
@@ -173,7 +173,7 @@ describe('Certificate Integration Tests', () => {
         mockCallback
       );
 
-      expect((verifyResult as any).statusCode).toBe(201);
+      expect((verifyResult as any).statusCode).toBe(200);
     }, 45000);
   });
 });

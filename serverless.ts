@@ -18,18 +18,19 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
+      S3_BUCKET_NAME: 'certificadoignite2021',
     },
     lambdaHashingVersion: '20201221',
     iamRoleStatements: [
       {
         Effect: 'Allow',
-        Action: ['dynamodb:*'],
-        Resource: ['*'],
+        Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
+        Resource: ['arn:aws:dynamodb:*:*:table/users_certificate'],
       },
       {
         Effect: 'Allow',
-        Action: ['s3:*'],
-        Resource: ['*'],
+        Action: ['s3:PutObject', 's3:GetObject'],
+        Resource: ['arn:aws:s3:::certificadoignite2021/*'],
       },
     ],
   },

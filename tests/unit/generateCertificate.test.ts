@@ -130,7 +130,7 @@ describe('generateCertificate', () => {
 
     expect(result.statusCode).toBe(201);
     expect(JSON.parse(result.body)).toEqual({
-      message: 'Certificado criado com sucesso',
+      message: 'Certificate created successfully',
       url: 'https://certificadoignite2021.s3.amazonaws.com/test123.pdf',
     });
 
@@ -176,7 +176,7 @@ describe('generateCertificate', () => {
 
     expect(result.statusCode).toBe(201);
     expect(JSON.parse(result.body)).toEqual({
-      message: 'Certificado criado com sucesso',
+      message: 'Certificate created successfully',
       url: 'https://certificadoignite2021.s3.amazonaws.com/existing123.pdf',
     });
 

@@ -4,6 +4,7 @@
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](./coverage/lcov-report/index.html)
 [![Node](https://img.shields.io/badge/node-20.x-green.svg)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
 A serverless certificate generation and verification service built with AWS Lambda, DynamoDB, and S3.
 
@@ -37,7 +38,7 @@ This service provides two main functionalities:
 ### Prerequisites
 
 - Node.js 20 or higher
-- Yarn package manager
+- npm package manager
 - Docker and Docker Compose (for local development)
 - AWS CLI (for deployment)
 
@@ -51,12 +52,12 @@ This service provides two main functionalities:
 
 2. **Install dependencies**
    ```bash
-   yarn install
+   npm install
    ```
 
 3. **Start LocalStack services**
    ```bash
-   yarn docker:up
+   npm run docker:up
    ```
    This will start:
    - LocalStack (AWS services emulator) on port 4566
@@ -86,22 +87,22 @@ This service provides two main functionalities:
 
 1. **Install dependencies**
    ```bash
-   yarn install
+   npm install
    ```
 
 2. **Install DynamoDB Local**
    ```bash
-   yarn dynamodb:install
+   npm run dynamodb:install
    ```
 
 3. **Start DynamoDB Local**
    ```bash
-   yarn dynamodb:start
+   npm run dynamodb:start
    ```
 
 4. **Start the application** (in another terminal)
    ```bash
-   yarn dev
+   npm run dev
    ```
 
 ## 🧪 Testing
@@ -109,32 +110,32 @@ This service provides two main functionalities:
 ### Code Quality
 ```bash
 # Run ESLint to check code quality
-yarn lint
+npm run lint
 
 # Fix linting issues automatically
-yarn lint:fix
+npm run lint:fix
 ```
 
 ### Unit Tests
 ```bash
 # Run unit tests (default, fast - no external dependencies required)
-yarn test
-yarn test:unit
+npm test
+npm run test:unit
 
 # Run tests in watch mode
-yarn test:watch
+npm run test:watch
 
 # Run tests with coverage report
-yarn test:coverage
+npm run test:coverage
 ```
 
 ### Integration Tests
 ```bash
 # Start LocalStack first (required for integration tests)
-yarn docker:up
+npm run docker:up
 
 # Run integration tests (requires LocalStack running)
-yarn test:integration
+npm run test:integration
 ```
 
 ### Test Structure
@@ -175,25 +176,22 @@ yarn test:integration
     "grade": "A+"
   }
   ```
-- **Response** (New User):
+- **Response** `201 Created`:
   ```json
   {
     "message": "Certificate created successfully",
     "url": "https://certificadoignite2021.s3.amazonaws.com/user-unique-id.pdf"
   }
   ```
-- **Response** (Existing User):
+- **Response** `400 Bad Request` (missing/invalid body):
   ```json
-  {
-    "message": "Certificate already exists for this user",
-    "url": "https://certificadoignite2021.s3.amazonaws.com/user-unique-id.pdf"
-  }
+  { "message": "id, name and grade are required" }
   ```
 
 ### Verify Certificate
 - **Method**: `GET`
 - **Endpoint**: `/verifyCertificate/{id}`
-- **Response** (Valid):
+- **Response** `200 OK` (found):
   ```json
   {
     "message": "Valid certificate",
@@ -201,12 +199,21 @@ yarn test:integration
     "url": "https://certificadoignite2021.s3.amazonaws.com/user-unique-id.pdf"
   }
   ```
-- **Response** (Invalid):
+- **Response** `404 Not Found`:
   ```json
-  {
-    "message": "Invalid certificate"
-  }
+  { "message": "Certificate not found" }
   ```
+- **Response** `400 Bad Request` (missing id):
+  ```json
+  { "message": "Certificate ID is required" }
+  ```
+
+## 🔐 Security
+
+- **IAM least-privilege**: Lambda roles are scoped to specific DynamoDB actions (`GetItem`, `PutItem`, `Query`) on the `users_certificate` table only, and `PutObject`/`GetObject` on the certificate bucket only
+- **Input validation**: All required fields (`id`, `name`, `grade`) are validated before processing
+- **JSON safety**: Request body parsing is wrapped in `try/catch` to prevent unhandled 500 errors
+- **Resource cleanup**: Puppeteer browser instances are always closed via `try/finally` to prevent process leaks
 
 ## 🏗️ Architecture
 
@@ -240,10 +247,13 @@ yarn test:integration
 
 The application uses the following environment variables:
 
-- `IS_OFFLINE`: Set to 'true' for local development
-- `AWS_REGION`: AWS region (default: us-east-1)
-- `DYNAMODB_ENDPOINT`: DynamoDB endpoint (for local development)
-- `S3_ENDPOINT`: S3 endpoint (for local development)
+| Variable | Description | Default |
+|---|---|---|
+| `IS_OFFLINE` | Set to `true` for local development | — |
+| `AWS_REGION` | AWS region | `eu-west-1` |
+| `S3_BUCKET_NAME` | S3 bucket for storing PDF certificates | `certificadoignite2021` |
+| `DYNAMODB_ENDPOINT` | DynamoDB endpoint override (local dev) | `http://localhost:4566` |
+| `S3_ENDPOINT` | S3 endpoint override (local dev) | `http://localhost:4566` |
 
 ## 📁 Project Structure
 
@@ -253,44 +263,41 @@ The application uses the following environment variables:
 │   │   ├── generateCertificate.ts  # Generate PDF certificates
 │   │   └── verifyCertificate.ts    # Verify certificates by ID
 │   ├── templates/           # Certificate templates
-│   │   ├── certificate.hbs  # Handlebars template (English)
-│   │   └── stamp.png        # Certificate medal/stamp
-│   └── utils/               # Utility functions
-│       └── dynamodbClient.ts  # DynamoDB client setup
+│   │   ├── certificate.hbs  # Handlebars HTML template
+│   │   └── stamp.png        # Certificate medal/stamp image
+│   └── utils/               # Utility modules
+│       └── dynamodbClient.ts  # DynamoDB document client setup
 ├── tests/
-│   ├── unit/               # Unit tests (26 tests, 100% coverage)
-│   │   ├── generateCertificate.test.ts  # 17 tests
-│   │   └── verifyCertificate.test.ts    # 9 tests
-│   ├── integration/        # Integration tests (E2E with LocalStack)
-│   │   ├── generateCertificate.integration.test.ts
-│   │   └── verifyCertificate.integration.test.ts
-│   └── setup.ts           # Test setup configuration
+│   ├── unit/               # Unit tests (mocked dependencies)
+│   │   ├── generateCertificate.test.ts
+│   │   └── verifyCertificate.test.ts
+│   ├── integration/        # Integration tests (LocalStack)
+│   │   ├── certificate.integration.test.ts
+│   │   └── setup.ts        # LocalStack readiness helper
+│   └── setup.ts            # Global test environment config
 ├── localstack-init/        # LocalStack initialization scripts
-│   └── init.sh            # Creates DynamoDB tables and S3 buckets
-├── coverage/              # Test coverage reports (generated)
-│   └── lcov-report/       # HTML coverage reports
+│   └── init.sh             # Creates DynamoDB tables and S3 buckets
 ├── .github/
 │   └── workflows/
-│       └── ci.yml         # GitHub Actions CI/CD pipeline
+│       └── ci.yml          # GitHub Actions CI/CD pipeline
 ├── docker-compose.yml      # Docker services configuration
-├── serverless.ts          # Serverless Framework configuration (TypeScript)
-├── serverless.yml         # Generated serverless config
-├── jest.config.js         # Base Jest configuration
-├── jest.unit.config.js    # Unit tests configuration
+├── serverless.ts           # Serverless Framework configuration
+├── jest.config.js          # Base Jest configuration
+├── jest.unit.config.js     # Unit tests configuration
 ├── jest.integration.config.js  # Integration tests configuration
-├── eslint.config.js       # ESLint v9 flat configuration
-├── tsconfig.json          # TypeScript configuration
-└── package.json           # Dependencies and scripts
+├── eslint.config.js        # ESLint v9 flat configuration
+├── tsconfig.json           # TypeScript configuration
+└── package.json            # Dependencies and scripts
 ```
 
 ## 🐳 Docker Commands
 
 ```bash
 # Start services
-yarn docker:up
+npm run docker:up
 
 # Stop services
-yarn docker:down
+npm run docker:down
 
 # View logs
 docker compose logs -f
@@ -303,31 +310,31 @@ docker exec -it certificate-localstack bash
 
 ```bash
 # Install dependencies
-yarn install
+npm install
 
 # Start development server (with serverless-offline)
-yarn dev
+npm run dev
 
 # Build TypeScript
-yarn build
+npm run build
 
-# Code Quality
-yarn lint              # Check code quality
-yarn lint:fix          # Fix linting issues automatically
+# Code quality
+npm run lint              # Check code quality
+npm run lint:fix          # Fix linting issues automatically
 
 # Testing
-yarn test              # Run unit tests (default, fast)
-yarn test:unit         # Same as yarn test
-yarn test:watch        # Run tests in watch mode
-yarn test:coverage     # Run tests with coverage report
-yarn test:integration  # Run integration tests (requires LocalStack)
+npm test                  # Run unit tests (default, fast)
+npm run test:unit         # Same as npm test
+npm run test:watch        # Run tests in watch mode
+npm run test:coverage     # Run tests with coverage report
+npm run test:integration  # Run integration tests (requires LocalStack)
 
 # Docker
-yarn docker:up         # Start LocalStack services
-yarn docker:down       # Stop LocalStack services
+npm run docker:up         # Start LocalStack services
+npm run docker:down       # Stop LocalStack services
 
 # Deployment
-yarn deploy            # Deploy to AWS
+npm run deploy            # Deploy to AWS
 ```
 
 ## 📊 Test Coverage
@@ -345,7 +352,7 @@ Current test coverage for main function files:
 ### Viewing Coverage Reports
 ```bash
 # Generate coverage report
-yarn test:coverage
+npm run test:coverage
 
 # Open HTML report in browser
 open coverage/lcov-report/index.html
@@ -372,13 +379,13 @@ This project uses GitHub Actions for continuous integration. The CI pipeline aut
 You can simulate the CI pipeline locally:
 ```bash
 # Install dependencies
-yarn install --frozen-lockfile
+npm ci
 
 # Run linter
-yarn lint
+npm run lint
 
 # Run tests with coverage
-yarn test:coverage
+npm run test:coverage
 ```
 
 ## �📊 Monitoring and Debugging
@@ -429,14 +436,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
    - Check if chrome-aws-lambda is properly installed
 
 4. **Tests failing**: 
-   - **Unit tests**: Should work without LocalStack (`yarn test`)
-   - **Integration tests**: Require LocalStack running first (`yarn docker:up` then `yarn test:integration`)
-   - **ESLint issues**: Run `yarn lint:fix` to auto-fix code style issues
-   - Clear Jest cache: `yarn jest --clearCache`
+   - **Unit tests**: Should work without LocalStack (`npm test`)
+   - **Integration tests**: Require LocalStack running first (`npm run docker:up` then `npm run test:integration`)
+   - **ESLint issues**: Run `npm run lint:fix` to auto-fix code style issues
+   - Clear Jest cache: `npx jest --clearCache`
 
 5. **TypeScript build errors**:
-   - Run `yarn build` to check for type errors
-   - Ensure all dependencies are installed: `yarn install`
+   - Run `npm run build` to check for type errors
+   - Ensure all dependencies are installed: `npm install`
    - Check `tsconfig.json` for proper configuration
 
 6. **Port conflicts**:
@@ -446,7 +453,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
    - Stop any services using these ports before starting
 
 7. **Coverage reports not accurate**:
-   - Ensure you're running `yarn test:coverage` not just `yarn test`
+   - Ensure you're running `npm run test:coverage` not just `npm test`
    - Clear coverage cache: `rm -rf coverage/`
    - Note: `dynamodbClient.ts` is intentionally excluded from coverage
 

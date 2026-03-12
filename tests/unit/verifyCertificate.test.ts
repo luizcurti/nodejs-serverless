@@ -80,9 +80,9 @@ describe('verifyCertificate', () => {
 
     const result = await handler(mockEvent, mockContext, mockCallback);
 
-    expect(result!.statusCode).toBe(201);
+    expect(result!.statusCode).toBe(200);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado válido',
+      message: 'Valid certificate',
       name: 'John Doe',
       url: 'https://certificadoignite2021.s3.amazonaws.com/test123.pdf',
     });
@@ -97,7 +97,7 @@ describe('verifyCertificate', () => {
     });
   });
 
-  it('should return 400 when user does not exist', async () => {
+  it('should return 404 when user does not exist', async () => {
     const mockEvent = {
       pathParameters: {
         id: 'nonexistent123',
@@ -112,9 +112,9 @@ describe('verifyCertificate', () => {
 
     const result = await handler(mockEvent, mockContext, mockCallback);
 
-    expect(result!.statusCode).toBe(400);
+    expect(result!.statusCode).toBe(404);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado inválido',
+      message: 'Certificate not found',
     });
 
     expect(mockDocumentSend).toHaveBeenCalledTimes(1);
@@ -160,9 +160,9 @@ describe('verifyCertificate', () => {
 
     const result = await handler(mockEvent, mockContext, mockCallback);
 
-    expect(result!.statusCode).toBe(400);
+    expect(result!.statusCode).toBe(404);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado inválido',
+      message: 'Certificate not found',
     });
   });
 
@@ -181,9 +181,9 @@ describe('verifyCertificate', () => {
 
     const result = await handler(mockEvent, mockContext, mockCallback);
 
-    expect(result!.statusCode).toBe(400);
+    expect(result!.statusCode).toBe(404);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado inválido',
+      message: 'Certificado não encontrado',
     });
   });
 
@@ -209,9 +209,9 @@ describe('verifyCertificate', () => {
 
     const result = await handler(mockEvent, mockContext, mockCallback);
 
-    expect(result!.statusCode).toBe(201);
+    expect(result!.statusCode).toBe(200);
     expect(JSON.parse(result!.body)).toEqual({
-      message: 'Certificado válido',
+      message: 'Valid certificate',
       name: 'Jane Smith',
       url: 'https://certificadoignite2021.s3.amazonaws.com/user456.pdf',
     });

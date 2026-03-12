@@ -35,7 +35,7 @@ const createS3Client = () => {
   const endpoint = process.env.S3_ENDPOINT || 'http://localhost:4566';
   
   return new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.AWS_REGION || 'eu-west-1',
     ...(isOffline && {
       endpoint,
       forcePathStyle: true,
@@ -56,8 +56,25 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
-  
-  const { id, name, grade } = JSON.parse(event.body) as ICreateCertificate;
+
+  let parsed: ICreateCertificate;
+  try {
+    parsed = JSON.parse(event.body) as ICreateCertificate;
+  } catch {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: 'Invalid JSON in request body' }),
+    };
+  }
+
+  const { id, name, grade } = parsed;
+
+  if (!id || !name || !grade) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: 'id, name and grade are required' }),
+    };
+  }
 
   const response = await document.send(new QueryCommand({
     TableName: 'users_certificate',
@@ -67,7 +84,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     },
   }));
 
-  const userAlreadyExists = response.Items?.[0];
+  const userAlreadyExists = response.Items?.[0] as ICreateCertificate | undefined;
 
   if (!userAlreadyExists) {
     await document.send(new PutCommand({
@@ -84,10 +101,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   const medalPath = join(process.cwd(), 'src', 'templates', 'stamp.png');
   const medal = readFileSync(medalPath, 'base64');
 
+  // Usa dados do banco quando usuário já existe para evitar inconsistência
+  const certName = userAlreadyExists?.name ?? name;
+  const certGrade = userAlreadyExists?.grade ?? grade;
+
   const data: ITemplate = {
-    name,
     id,
-    grade,
+    name: certName,
+    grade: certGrade,
     date: dayjs().format('DD/MM/YYYY'),
     medal,
   };
@@ -100,23 +121,26 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     executablePath: await chromium.executablePath,
   });
 
-  const page = await browser.newPage();
+  let pdf!: Buffer;
+  try {
+    const page = await browser.newPage();
+    await page.setContent(content);
+    pdf = await page.pdf({
+      format: 'a4',
+      landscape: true,
+      printBackground: true,
+      preferCSSPageSize: true,
+      path: process.env.IS_OFFLINE ? './certificate.pdf' : undefined,
+    });
+  } finally {
+    await browser.close();
+  }
 
-  await page.setContent(content);
-  const pdf = await page.pdf({
-    format: 'a4',
-    landscape: true,
-    printBackground: true,
-    preferCSSPageSize: true,
-    path: process.env.IS_OFFLINE ? './certificate.pdf' : undefined,
-  });
-
-  await browser.close();
-
+  const bucket = process.env.S3_BUCKET_NAME ?? 'certificadoignite2021';
   const s3 = createS3Client();
 
   await s3.send(new PutObjectCommand({
-    Bucket: 'certificadoignite2021',
+    Bucket: bucket,
     Key: `${id}.pdf`,
     Body: pdf,
     ContentType: 'application/pdf',
@@ -125,8 +149,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   return {
     statusCode: 201,
     body: JSON.stringify({
-      message: 'Certificado criado com sucesso',
-      url: `https://certificadoignite2021.s3.amazonaws.com/${id}.pdf`,
+      message: 'Certificate created successfully',
+      url: `https://${bucket}.s3.amazonaws.com/${id}.pdf`,
     }),
   };
 };

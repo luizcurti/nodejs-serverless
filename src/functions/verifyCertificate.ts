@@ -32,20 +32,21 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   const userCertificate = response.Items?.[0] as IUserCertificate;
 
   if (userCertificate) {
+    const bucket = process.env.S3_BUCKET_NAME ?? 'certificadoignite2021';
     return {
-      statusCode: 201,
+      statusCode: 200,
       body: JSON.stringify({
-        message: 'Certificado válido',
+        message: 'Valid certificate',
         name: userCertificate.name,
-        url: `https://certificadoignite2021.s3.amazonaws.com/${id}.pdf`,
+        url: `https://${bucket}.s3.amazonaws.com/${id}.pdf`,
       }),
     };
   }
 
   return {
-    statusCode: 400,
+    statusCode: 404,
     body: JSON.stringify({
-      message: 'Certificado inválido',
+      message: 'Certificate not found',
     }),
   };
 };

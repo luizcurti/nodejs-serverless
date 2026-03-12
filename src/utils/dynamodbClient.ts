@@ -6,7 +6,7 @@ const createDynamoDBClient = () => {
   const endpoint = process.env.DYNAMODB_ENDPOINT || 'http://localhost:4566';
   
   const client = new DynamoDBClient({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.AWS_REGION || 'eu-west-1',
     ...(isOffline && {
       endpoint,
       credentials: {
