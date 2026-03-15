@@ -200,5 +200,217 @@
     "serviceProviderAwsCfStackUpdated": null,
     "serviceProviderAwsCfStackStatus": null,
     "serviceProviderAwsCfStackOutputs": null
+  },
+  "/Users/luizcurti/node/github/nodejs-serverless/serverless.ts": {
+    "versionFramework": "4.33.0",
+    "servicePath": "/Users/luizcurti/node/github/nodejs-serverless/serverless.ts",
+    "serviceConfigFileName": "serverless.ts",
+    "service": {
+      "service": "ignitecertificate",
+      "frameworkVersion": "4",
+      "plugins": [
+        "serverless-esbuild",
+        "serverless-dynamodb-local",
+        "serverless-offline"
+      ],
+      "build": {
+        "esbuild": false
+      },
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs20.x",
+        "region": "eu-west-1",
+        "apiGateway": {
+          "minimumCompressionSize": 1024,
+          "shouldStartNameWithService": true
+        },
+        "environment": {
+          "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1",
+          "NODE_OPTIONS": "--enable-source-maps --stack-trace-limit=1000",
+          "S3_BUCKET_NAME": "certificadoignite2021"
+        },
+        "lambdaHashingVersion": "20201221",
+        "iamRoleStatements": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:Query"
+            ],
+            "Resource": [
+              "arn:aws:dynamodb:*:*:table/users_certificate"
+            ]
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject",
+              "s3:GetObject"
+            ],
+            "Resource": [
+              "arn:aws:s3:::certificadoignite2021/*"
+            ]
+          }
+        ],
+        "stage": "dev",
+        "versionFunctions": true
+      },
+      "package": {
+        "individually": false,
+        "include": [
+          "./src/templates/**"
+        ]
+      },
+      "functions": {
+        "generateCertificate": {
+          "handler": "src/functions/generateCertificate.handler",
+          "events": [
+            {
+              "http": {
+                "path": "generateCertificate",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "verifyCertificate": {
+          "handler": "src/functions/verifyCertificate.handler",
+          "events": [
+            {
+              "http": {
+                "path": "verifyCertificate/{id}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ]
+        }
+      },
+      "custom": {
+        "esbuild": {
+          "bundle": true,
+          "minify": false,
+          "sourcemap": true,
+          "exclude": [
+            "aws-sdk"
+          ],
+          "target": "node20",
+          "define": {},
+          "platform": "node",
+          "concurrency": 10,
+          "external": [
+            "chrome-aws-lambda"
+          ]
+        },
+        "dynamodb": {
+          "stages": [
+            "dev",
+            "local"
+          ],
+          "start": {
+            "port": 8000,
+            "inMemory": true,
+            "migrate": true
+          }
+        }
+      },
+      "resources": {
+        "Resources": {
+          "dbCertificateUsers": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "users_certificate",
+              "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+              },
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs20.x",
+      "region": "eu-west-1",
+      "apiGateway": {
+        "minimumCompressionSize": 1024,
+        "shouldStartNameWithService": true
+      },
+      "environment": {
+        "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1",
+        "NODE_OPTIONS": "--enable-source-maps --stack-trace-limit=1000",
+        "S3_BUCKET_NAME": "certificadoignite2021"
+      },
+      "lambdaHashingVersion": "20201221",
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:Query"
+          ],
+          "Resource": [
+            "arn:aws:dynamodb:*:*:table/users_certificate"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:PutObject",
+            "s3:GetObject"
+          ],
+          "Resource": [
+            "arn:aws:s3:::certificadoignite2021/*"
+          ]
+        }
+      ],
+      "stage": "dev",
+      "versionFunctions": true
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "Serverless plugin \"serverless-dynamodb-local\" not found. Make sure it's installed and listed in the \"plugins\" section of your serverless config file. Use the --debug flag to learn more.",
+      "stack": "ServerlessError2: Serverless plugin \"serverless-dynamodb-local\" not found. Make sure it's installed and listed in the \"plugins\" section of your serverless config file. Use the --debug flag to learn more.\n    at PluginManager.resolveServicePlugins (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2273:4570)\n    at async PluginManager.loadAllPlugins (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2273:2753)\n    at async Serverless.init (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2325:9864)\n    at async runFramework (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2352:843)\n    at async TraditionalRunner.run (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2348:28240)\n    at async route (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2519:2848)\n    at async Object.run (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2520:3886)\n    at async run2 (file:///Users/luizcurti/.serverless/releases/4.33.0/package/dist/sf-core.js:2520:5040)",
+      "code": "PLUGIN_NOT_FOUND"
+    },
+    "serviceRawFile": "import type { AWS } from '@serverless/typescript';\n\nconst serverlessConfiguration: AWS = {\n  service: 'ignitecertificate',\n  frameworkVersion: '4',\n  plugins: ['serverless-esbuild', 'serverless-dynamodb-local', 'serverless-offline'],\n  build: {\n    esbuild: false,\n  },\n  provider: {\n    name: 'aws',\n    runtime: 'nodejs20.x',\n    region: 'eu-west-1',\n    apiGateway: {\n      minimumCompressionSize: 1024,\n      shouldStartNameWithService: true,\n    },\n    environment: {\n      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',\n      NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',\n      S3_BUCKET_NAME: 'certificadoignite2021',\n    },\n    lambdaHashingVersion: '20201221',\n    iamRoleStatements: [\n      {\n        Effect: 'Allow',\n        Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],\n        Resource: ['arn:aws:dynamodb:*:*:table/users_certificate'],\n      },\n      {\n        Effect: 'Allow',\n        Action: ['s3:PutObject', 's3:GetObject'],\n        Resource: ['arn:aws:s3:::certificadoignite2021/*'],\n      },\n    ],\n  },\n  package: { individually: false, include: ['./src/templates/**'] },\n  functions: {\n    generateCertificate: {\n      handler: 'src/functions/generateCertificate.handler',\n      events: [\n        {\n          http: {\n            path: 'generateCertificate',\n            method: 'post',\n            cors: true,\n          },\n        },\n      ],\n    },\n    verifyCertificate: {\n      handler: 'src/functions/verifyCertificate.handler',\n      events: [\n        {\n          http: {\n            path: 'verifyCertificate/{id}',\n            method: 'get',\n            cors: true,\n          },\n        },\n      ],\n    },\n  },\n  custom: {\n    esbuild: {\n      bundle: true,\n      minify: false,\n      sourcemap: true,\n      exclude: ['aws-sdk'],\n      target: 'node20',\n      define: { 'require.resolve': undefined },\n      platform: 'node',\n      concurrency: 10,\n      external: ['chrome-aws-lambda'],\n    },\n    dynamodb: {\n      stages: ['dev', 'local'],\n      start: {\n        port: 8000,\n        inMemory: true,\n        migrate: true,\n      },\n    },\n  },\n  resources: {\n    Resources: {\n      dbCertificateUsers: {\n        Type: 'AWS::DynamoDB::Table',\n        Properties: {\n          TableName: 'users_certificate',\n          ProvisionedThroughput: {\n            ReadCapacityUnits: 5,\n            WriteCapacityUnits: 5,\n          },\n          AttributeDefinitions: [\n            {\n              AttributeName: 'id',\n              AttributeType: 'S',\n            },\n          ],\n          KeySchema: [\n            {\n              AttributeName: 'id',\n              KeyType: 'HASH',\n            },\n          ],\n        },\n      },\n    },\n  },\n};\n\nmodule.exports = serverlessConfiguration;\n",
+    "command": [
+      "offline"
+    ],
+    "options": {},
+    "orgId": "28c2a450-a078-40dc-9580-993bebc8132b",
+    "orgName": "luizcurti6",
+    "userId": "WT9MCsBxSw1srkRPnj",
+    "userName": "luizcurti6",
+    "serviceProviderAwsAccountId": "434246207351",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
   }
 }

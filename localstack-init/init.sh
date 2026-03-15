@@ -19,11 +19,11 @@ awslocal dynamodb create-table \
         AttributeName=id,KeyType=HASH \
     --provisioned-throughput \
         ReadCapacityUnits=5,WriteCapacityUnits=5 \
-    --region us-east-1
+    --region eu-west-1
 
 # Create S3 bucket
 echo "Creating S3 bucket..."
-awslocal s3 mb s3://certificadoignite2021 --region us-east-1
+awslocal s3 mb s3://certificadoignite2021 --region eu-west-1
 
 # Set S3 bucket policy for public read
 echo "Setting S3 bucket policy..."

@@ -3,7 +3,7 @@ import type { AWS } from '@serverless/typescript';
 const serverlessConfiguration: AWS = {
   service: 'ignitecertificate',
   frameworkVersion: '4',
-  plugins: ['serverless-esbuild', 'serverless-dynamodb-local', 'serverless-offline'],
+  plugins: ['serverless-esbuild', 'serverless-offline'],
   build: {
     esbuild: false,
   },
@@ -38,6 +38,7 @@ const serverlessConfiguration: AWS = {
   functions: {
     generateCertificate: {
       handler: 'src/functions/generateCertificate.handler',
+      timeout: 30,
       events: [
         {
           http: {
