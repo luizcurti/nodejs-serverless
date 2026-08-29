@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant C as Client
+    participant L as generateCertificate Lambda
+    participant D as DynamoDB
+    participant Ch as Headless Chromium
+    participant S as S3
+
+    C->>L: POST /generateCertificate {id, name, grade}
+    L->>L: validate body (id, name, grade required)
+    alt invalid body
+        L-->>C: 400 Bad Request
+    end
+
+    L->>D: Query users_certificate by id
+    D-->>L: existing item or none
+
+    alt user does not exist yet
+        L->>D: PutItem {id, name, grade, created_at}
+    else user already exists
+        Note over L: reuse the stored name/grade so the PDF matches the DB record
+    end
+
+    L->>L: render certificate.hbs template
+    L->>Ch: launch browser, setContent, page.pdf()
+    Ch-->>L: PDF bytes
+    L->>S: PutObject {id}.pdf
+    L-->>C: 201 Created {message, url}

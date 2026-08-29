@@ -1,0 +1,28 @@
+flowchart LR
+    Dev([Developer / CI])
+
+    subgraph Build["Build (yarn build:lambda)"]
+        Esbuild["esbuild bundles each\nsrc/functions/*.ts"]
+        Pkg["infra/build/&lt;fn&gt;/\n(+ templates, + @sparticuz/chromium)"]
+        Esbuild --> Pkg
+    end
+
+    subgraph TF["Terraform (infra/)"]
+        Zip["archive_file\n(zips infra/build/&lt;fn&gt;/)"]
+        DeployBucket[("S3: lambda deployment\npackages (private)")]
+        Lambdas["aws_lambda_function\ngenerateCertificate / verifyCertificate"]
+        IAM["IAM role\n(least-privilege)"]
+        DDB[("DynamoDB\nusers_certificate")]
+        CertBucket[("S3: certificate PDFs\n(public read)")]
+        API["API Gateway HTTP API"]
+    end
+
+    Dev --> Esbuild
+    Pkg --> Zip
+    Zip --> DeployBucket
+    DeployBucket --> Lambdas
+    IAM --> Lambdas
+    Lambdas --> DDB
+    Lambdas --> CertBucket
+    API --> Lambdas
+    Dev -->|"terraform apply"| TF

@@ -6,7 +6,7 @@ const globals = require('globals');
 module.exports = [
   js.configs.recommended,
   {
-    files: ['src/**/*.ts', 'tests/**/*.ts'],
+    files: ['src/**/*.ts', 'tests/**/*.ts', 'scripts/**/*.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -32,15 +32,6 @@ module.exports = [
     },
   },
   {
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'coverage/',
-      '.serverless/',
-      '.webpack/',
-      '*.js',
-      'jest.*.js',
-      'eslint.config.js',
-    ],
+    ignores: ['node_modules/', 'dist/', 'coverage/', 'infra/', '*.js', 'jest.*.js', 'eslint.config.js'],
   },
 ];

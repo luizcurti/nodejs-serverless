@@ -18,16 +18,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   }
-  
+
   const { id } = event.pathParameters;
 
-  const response = await document.send(new QueryCommand({
-    TableName: 'users_certificate',
-    KeyConditionExpression: 'id = :id',
-    ExpressionAttributeValues: {
-      ':id': id,
-    },
-  }));
+  const response = await document.send(
+    new QueryCommand({
+      TableName: 'users_certificate',
+      KeyConditionExpression: 'id = :id',
+      ExpressionAttributeValues: {
+        ':id': id,
+      },
+    }),
+  );
 
   const userCertificate = response.Items?.[0] as IUserCertificate;
 

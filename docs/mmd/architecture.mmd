@@ -1,0 +1,24 @@
+flowchart LR
+    Client([Client])
+
+    subgraph AWS["AWS (eu-west-1)"]
+        APIGW["API Gateway"]
+        GenFn["Lambda: generateCertificate"]
+        VerifyFn["Lambda: verifyCertificate"]
+        DDB[("DynamoDB\nusers_certificate")]
+        S3[("S3\ncertificate PDFs")]
+    end
+
+    Client -->|"POST /generateCertificate"| APIGW
+    Client -->|"GET /verifyCertificate/{id}"| APIGW
+    APIGW --> GenFn
+    APIGW --> VerifyFn
+
+    GenFn -->|"Query / PutItem"| DDB
+    GenFn -->|"PutObject (rendered PDF)"| S3
+
+    VerifyFn -->|"Query"| DDB
+    VerifyFn -.->|"builds public URL"| S3
+
+    note["Chromium via @sparticuz/chromium\n+ puppeteer-core renders the PDF\ninside generateCertificate"]
+    GenFn -.- note

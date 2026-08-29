@@ -32,13 +32,21 @@ jest.mock('handlebars', () => ({
   compile: jest.fn(() => jest.fn(() => '<html>Mock Certificate</html>')),
 }));
 
-jest.mock('chrome-aws-lambda', () => ({
-  puppeteer: {
-    launch: jest.fn().mockResolvedValue(mockPuppeteerBrowser),
+const mockPuppeteerLaunch = jest.fn().mockResolvedValue(mockPuppeteerBrowser);
+
+jest.mock('puppeteer-core', () => ({
+  __esModule: true,
+  default: {
+    launch: mockPuppeteerLaunch,
   },
-  args: [],
-  defaultViewport: { width: 1280, height: 720 },
-  executablePath: jest.fn().mockReturnValue('/mock/chrome/path'),
+}));
+
+jest.mock('@sparticuz/chromium', () => ({
+  __esModule: true,
+  default: {
+    args: [],
+    executablePath: jest.fn().mockResolvedValue('/mock/chrome/path'),
+  },
 }));
 
 jest.mock('fs', () => ({
@@ -61,14 +69,14 @@ jest.mock('dayjs', () => {
 
 // Get references to mocked modules
 import { QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chromium';
 import { compile } from 'handlebars';
 import fs from 'fs';
 
 describe('generateCertificate', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { handler } = require('../../src/functions/generateCertificate');
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.IS_OFFLINE = 'true';
@@ -199,9 +207,7 @@ describe('generateCertificate', () => {
 
     mockDocumentSendGenerate.mockRejectedValueOnce(new Error('DynamoDB Error'));
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow('DynamoDB Error');
+    await expect(handler(mockEvent, mockContext, mockCallback)).rejects.toThrow('DynamoDB Error');
   });
 
   it('should handle DynamoDB put error', async () => {
@@ -220,9 +226,9 @@ describe('generateCertificate', () => {
     // Mock DynamoDB put error
     mockDocumentSendGenerate.mockRejectedValueOnce(new Error('DynamoDB Put Error'));
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow('DynamoDB Put Error');
+    await expect(handler(mockEvent, mockContext, mockCallback)).rejects.toThrow(
+      'DynamoDB Put Error',
+    );
   });
 
   it('should handle S3 upload error', async () => {
@@ -243,9 +249,7 @@ describe('generateCertificate', () => {
     // Mock S3 upload error
     mockS3Send.mockRejectedValue(new Error('S3 Error'));
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow('S3 Error');
+    await expect(handler(mockEvent, mockContext, mockCallback)).rejects.toThrow('S3 Error');
   });
 
   it('should handle PDF generation error', async () => {
@@ -264,11 +268,9 @@ describe('generateCertificate', () => {
     mockDocumentSendGenerate.mockResolvedValueOnce({});
 
     // Mock PDF generation error
-    (chromium.puppeteer.launch as jest.Mock).mockRejectedValueOnce(new Error('Puppeteer Error'));
+    mockPuppeteerLaunch.mockRejectedValueOnce(new Error('Puppeteer Error'));
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow('Puppeteer Error');
+    await expect(handler(mockEvent, mockContext, mockCallback)).rejects.toThrow('Puppeteer Error');
   });
 
   it('should read template and stamp files correctly', async () => {
@@ -293,12 +295,9 @@ describe('generateCertificate', () => {
 
     expect(fs.readFileSync).toHaveBeenCalledWith(
       expect.stringContaining('certificate.hbs'),
-      'utf8'
+      'utf8',
     );
-    expect(fs.readFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('stamp.png'),
-      'base64'
-    );
+    expect(fs.readFileSync).toHaveBeenCalledWith(expect.stringContaining('stamp.png'), 'base64');
     expect(compile).toHaveBeenCalledWith('<html>{{name}} - {{grade}}</html>');
   });
 
@@ -377,10 +376,11 @@ describe('generateCertificate', () => {
     await handler(mockEvent, mockContext, mockCallback);
 
     // Verify Puppeteer was configured with correct options
-    expect(chromium.puppeteer.launch).toHaveBeenCalledWith({
+    expect(mockPuppeteerLaunch).toHaveBeenCalledWith({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: expect.any(Function),
+      defaultViewport: { width: 1920, height: 1080 },
+      executablePath: '/mock/chrome/path',
+      headless: true,
     });
   });
 
@@ -406,7 +406,7 @@ describe('generateCertificate', () => {
 
     // Verify template compilation was called
     expect(compile).toHaveBeenCalled();
-    
+
     // Verify PDF generation options
     expect(mockPuppeteerPage.pdf).toHaveBeenCalledWith({
       format: 'a4',

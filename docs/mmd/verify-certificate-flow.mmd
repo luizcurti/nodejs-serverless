@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant C as Client
+    participant L as verifyCertificate Lambda
+    participant D as DynamoDB
+
+    C->>L: GET /verifyCertificate/{id}
+    alt missing id
+        L-->>C: 400 Bad Request
+    end
+
+    L->>D: Query users_certificate by id
+    D-->>L: item or empty result
+
+    alt certificate found
+        L-->>C: 200 OK {message, name, url}
+    else certificate not found
+        L-->>C: 404 Not Found
+    end

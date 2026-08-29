@@ -138,9 +138,9 @@ describe('verifyCertificate', () => {
 
     mockDocumentSend.mockRejectedValueOnce(new Error('DynamoDB Connection Error'));
 
-    await expect(
-      handler(mockEvent, mockContext, mockCallback)
-    ).rejects.toThrow('DynamoDB Connection Error');
+    await expect(handler(mockEvent, mockContext, mockCallback)).rejects.toThrow(
+      'DynamoDB Connection Error',
+    );
 
     expect(mockDocumentSend).toHaveBeenCalledTimes(1);
   });

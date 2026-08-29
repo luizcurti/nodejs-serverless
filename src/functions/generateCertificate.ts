@@ -6,7 +6,8 @@ import { compile } from 'handlebars';
 import dayjs from 'dayjs';
 import { join } from 'path';
 import { readFileSync } from 'fs';
-import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 interface ICreateCertificate {
   id: string;
@@ -33,7 +34,7 @@ const compileTemplate = async (data: ITemplate) => {
 const createS3Client = () => {
   const isOffline = process.env.IS_OFFLINE;
   const endpoint = process.env.S3_ENDPOINT || 'http://localhost:4566';
-  
+
   return new S3Client({
     region: process.env.AWS_REGION || 'eu-west-1',
     ...(isOffline && {
@@ -76,32 +77,36 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     };
   }
 
-  const response = await document.send(new QueryCommand({
-    TableName: 'users_certificate',
-    KeyConditionExpression: 'id = :id',
-    ExpressionAttributeValues: {
-      ':id': id,
-    },
-  }));
+  const response = await document.send(
+    new QueryCommand({
+      TableName: 'users_certificate',
+      KeyConditionExpression: 'id = :id',
+      ExpressionAttributeValues: {
+        ':id': id,
+      },
+    }),
+  );
 
   const userAlreadyExists = response.Items?.[0] as ICreateCertificate | undefined;
 
   if (!userAlreadyExists) {
-    await document.send(new PutCommand({
-      TableName: 'users_certificate',
-      Item: {
-        id,
-        name,
-        grade,
-        created_at: new Date().getTime(),
-      },
-    }));
+    await document.send(
+      new PutCommand({
+        TableName: 'users_certificate',
+        Item: {
+          id,
+          name,
+          grade,
+          created_at: new Date().getTime(),
+        },
+      }),
+    );
   }
 
   const medalPath = join(process.cwd(), 'src', 'templates', 'stamp.png');
   const medal = readFileSync(medalPath, 'base64');
 
-  // Usa dados do banco quando usuário já existe para evitar inconsistência
+  // Use the stored record when the user already exists to keep the certificate consistent
   const certName = userAlreadyExists?.name ?? name;
   const certGrade = userAlreadyExists?.grade ?? grade;
 
@@ -115,23 +120,25 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const content = await compileTemplate(data);
 
-  const browser = await chromium.puppeteer.launch({
+  const browser = await puppeteer.launch({
     args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath,
+    defaultViewport: { width: 1920, height: 1080 },
+    executablePath: await chromium.executablePath(),
+    headless: true,
   });
 
   let pdf!: Buffer;
   try {
     const page = await browser.newPage();
     await page.setContent(content);
-    pdf = await page.pdf({
+    const pdfBytes = await page.pdf({
       format: 'a4',
       landscape: true,
       printBackground: true,
       preferCSSPageSize: true,
       path: process.env.IS_OFFLINE ? './certificate.pdf' : undefined,
     });
+    pdf = Buffer.from(pdfBytes);
   } finally {
     await browser.close();
   }
@@ -139,12 +146,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   const bucket = process.env.S3_BUCKET_NAME ?? 'certificadoignite2021';
   const s3 = createS3Client();
 
-  await s3.send(new PutObjectCommand({
-    Bucket: bucket,
-    Key: `${id}.pdf`,
-    Body: pdf,
-    ContentType: 'application/pdf',
-  }));
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: `${id}.pdf`,
+      Body: pdf,
+      ContentType: 'application/pdf',
+    }),
+  );
 
   return {
     statusCode: 201,

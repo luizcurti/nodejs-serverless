@@ -14,12 +14,6 @@
     "skipLibCheck": true,
     "strict": true
   },
-  "include": ["src/**/*.ts", "serverless.ts"],
-  "exclude": [
-    "node_modules/**/*",
-    ".serverless/**/*",
-    ".webpack/**/*",
-    "_warmup/**/*",
-    ".vscode/**/*"
-  ]
+  "include": ["src/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules/**/*", ".vscode/**/*"]
 }

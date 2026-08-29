@@ -1,23 +1,24 @@
 services:
+  # Pinned to 4.0.3: newer "latest" builds require a LocalStack account/auth
+  # token to boot at all, even for free community services like DynamoDB/S3.
   localstack:
     container_name: certificate-localstack
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.0.3
     ports:
       - "4566:4566"            # LocalStack Gateway
       - "4510-4559:4510-4559"  # External services port range
     environment:
       - DEBUG=${DEBUG-}
-      - DOCKER_HOST=unix:///var/run/docker.sock
       - SERVICES=dynamodb,s3
-      - DATA_DIR=/var/lib/localstack/data
-      - HOSTNAME=localhost
-      - HOSTNAME_EXTERNAL=localhost
-      - PORT_WEB_UI=8080
-      - DEFAULT_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
     volumes:
-      - "./localstack-data:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack-init:/etc/localstack/init/ready.d"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - certificate-network
 
@@ -32,7 +33,29 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
+    networks:
+      - certificate-network
+
+  app:
+    container_name: certificate-app
+    build: .
+    # Matches the x86_64 AWS Lambda runtime this service deploys to: the
+    # bundled Chromium binary (@sparticuz/chromium) is x86_64-only. On
+    # arm64 hosts (e.g. Apple Silicon) this runs under emulation.
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    environment:
+      - IS_OFFLINE=true
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - S3_ENDPOINT=http://localstack:4566
+      - S3_BUCKET_NAME=certificadoignite2021
+    depends_on:
+      localstack:
+        condition: service_healthy
     networks:
       - certificate-network
 

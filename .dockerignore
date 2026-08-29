@@ -39,14 +39,11 @@ jspm_packages/
 .env.local
 .env.production
 
-# Serverless directories
-.serverless/
-
-# DynamoDB Local files
-.dynamodb/
-
-# Webpack directories
-.webpack/
+# Terraform
+infra/build/
+infra/.terraform/
+infra/terraform.tfstate*
+infra/*.tfplan
 
 # IDE
 .vscode/

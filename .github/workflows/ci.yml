@@ -2,36 +2,148 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'yarn'
-    
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-    
-    - name: Run linter
-      run: yarn lint
-    
-    - name: Run unit tests with coverage
-      run: yarn test:coverage
-    
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage/lcov.info
-        flags: unittests
-        name: codecov-umbrella
-      continue-on-error: true
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~1.12'
+          terraform_wrapper: false
+
+      # 1. Install dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # 2. Dependency / security checks
+      # Scoped to production dependencies: one known, unpatched, unreachable
+      # finding remains (extract-zip inside puppeteer-core's browser-download
+      # helper, which this codebase never invokes) - see README "Security".
+      - name: Audit production dependencies
+        run: yarn audit --groups dependencies
+        continue-on-error: true
+
+      # 3. Formatting / lint
+      - name: Check formatting
+        run: yarn format:check
+
+      - name: Lint
+        run: yarn lint
+
+      # 4. Typecheck
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # 5. Unit tests
+      - name: Unit tests with coverage
+        run: yarn test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true
+
+      # 9. Build
+      - name: Build
+        run: yarn build
+
+      # Infrastructure-as-code checks. No AWS credentials are configured in
+      # this workflow, so this validates the Terraform config and the Lambda
+      # packaging step without ever calling `plan`/`apply` against a real
+      # account.
+      - name: Build Lambda deployment packages
+        run: yarn build:lambda
+
+      - name: Terraform format check
+        run: terraform -chdir=infra fmt -check -diff
+
+      - name: Terraform init
+        run: terraform -chdir=infra init -backend=false
+
+      - name: Terraform validate
+        run: terraform -chdir=infra validate
+
+      # 10. Docker build
+      - name: Docker build
+        run: docker build -t certificate-app:ci .
+
+      # Local AWS services for integration/API/E2E tests, run the same way a
+      # contributor would run them locally (docker-compose.yml).
+      - name: Start LocalStack (Docker Compose)
+        run: docker compose up -d localstack dynamodb-admin
+
+      - name: Wait for LocalStack to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4566/_localstack/health > /dev/null; then
+              echo "LocalStack is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "LocalStack did not become healthy in time" >&2
+          docker compose logs localstack
+          exit 1
+
+      # 6/11. Integration tests (real DynamoDB + S3 + Chromium PDF generation
+      # against the Dockerized LocalStack)
+      - name: Integration tests
+        run: yarn test:integration
+
+      # 7/8/11. API/collection tests (Postman/Newman) over real HTTP, against
+      # the same Dockerized LocalStack
+      - name: API/collection tests
+        run: yarn test:api
+        env:
+          IS_OFFLINE: 'true'
+          AWS_REGION: us-east-1
+          DYNAMODB_ENDPOINT: http://localhost:4566
+          S3_ENDPOINT: http://localhost:4566
+          S3_BUCKET_NAME: certificadoignite2021
+
+      # Full containerized app smoke test: build the app image, start it
+      # alongside LocalStack, and exercise both endpoints over real HTTP.
+      - name: Docker Compose app smoke test
+        run: |
+          docker compose up -d --build app
+          for i in $(seq 1 30); do
+            # verifyCertificate/health-check always 404s (no such id) - any
+            # HTTP response at all means the server is accepting connections.
+            if curl -s -o /dev/null http://localhost:3000/verifyCertificate/health-check; then
+              echo "App is up"
+              break
+            fi
+            sleep 2
+          done
+          curl -sf -X POST http://localhost:3000/generateCertificate \
+            -H "Content-Type: application/json" \
+            -d '{"id":"ci-smoke-test","name":"CI Smoke Test","grade":"A+"}'
+
+      - name: Tear down Docker Compose
+        if: always()
+        run: docker compose down -v

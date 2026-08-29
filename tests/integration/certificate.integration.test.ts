@@ -8,12 +8,12 @@ import { DynamoDBDocumentClient, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 describe('Certificate Integration Tests', () => {
   const mockContext = {} as Context;
   const mockCallback = jest.fn();
-  
+
   let docClient: DynamoDBDocumentClient;
 
   beforeAll(async () => {
     await waitForLocalStack();
-    
+
     const client = new DynamoDBClient({
       region: 'us-east-1',
       endpoint: 'http://localhost:4566',
@@ -22,18 +22,20 @@ describe('Certificate Integration Tests', () => {
         secretAccessKey: 'test',
       },
     });
-    
+
     docClient = DynamoDBDocumentClient.from(client);
   }, 45000); // Increased from 15000ms to 45000ms to allow LocalStack setup
 
   beforeEach(async () => {
     // Clean up test data
     try {
-      await docClient.send(new DeleteCommand({
-        TableName: 'users_certificate',
-        Key: { id: 'integration-test-123' },
-      }));
-    } catch (error) {
+      await docClient.send(
+        new DeleteCommand({
+          TableName: 'users_certificate',
+          Key: { id: 'integration-test-123' },
+        }),
+      );
+    } catch {
       // Ignore if item doesn't exist
     }
   });
@@ -41,11 +43,13 @@ describe('Certificate Integration Tests', () => {
   afterEach(async () => {
     // Clean up test data
     try {
-      await docClient.send(new DeleteCommand({
-        TableName: 'users_certificate',
-        Key: { id: 'integration-test-123' },
-      }));
-    } catch (error) {
+      await docClient.send(
+        new DeleteCommand({
+          TableName: 'users_certificate',
+          Key: { id: 'integration-test-123' },
+        }),
+      );
+    } catch {
       // Ignore if item doesn't exist
     }
   });
@@ -63,12 +67,12 @@ describe('Certificate Integration Tests', () => {
       const result = await generateHandler(
         generateEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       expect(result).toBeDefined();
       expect((result as any).statusCode).toBe(201);
-      
+
       const responseBody = JSON.parse((result as any).body);
       expect(responseBody.message).toBe('Certificate created successfully');
       expect(responseBody.url).toContain('integration-test-123.pdf');
@@ -84,11 +88,7 @@ describe('Certificate Integration Tests', () => {
         }),
       };
 
-      await generateHandler(
-        generateEvent as APIGatewayProxyEvent,
-        mockContext,
-        mockCallback
-      );
+      await generateHandler(generateEvent as APIGatewayProxyEvent, mockContext, mockCallback);
 
       // Then verify it
       const verifyEvent: Partial<APIGatewayProxyEvent> = {
@@ -100,12 +100,12 @@ describe('Certificate Integration Tests', () => {
       const result = await verifyHandler(
         verifyEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       expect(result).toBeDefined();
       expect((result as any).statusCode).toBe(200);
-      
+
       const responseBody = JSON.parse((result as any).body);
       expect(responseBody.message).toBe('Valid certificate');
       expect(responseBody.name).toBe('Integration Test User');
@@ -122,12 +122,12 @@ describe('Certificate Integration Tests', () => {
       const result = await verifyHandler(
         verifyEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       expect(result).toBeDefined();
       expect((result as any).statusCode).toBe(404);
-      
+
       const responseBody = JSON.parse((result as any).body);
       expect(responseBody.message).toBe('Certificate not found');
     }, 15000);
@@ -147,13 +147,13 @@ describe('Certificate Integration Tests', () => {
       const result1 = await generateHandler(
         generateEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       const result2 = await generateHandler(
         generateEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       // Both should succeed
@@ -170,7 +170,7 @@ describe('Certificate Integration Tests', () => {
       const verifyResult = await verifyHandler(
         verifyEvent as APIGatewayProxyEvent,
         mockContext,
-        mockCallback
+        mockCallback,
       );
 
       expect((verifyResult as any).statusCode).toBe(200);
