@@ -1,7 +1,7 @@
 # 📜 Certificate Generation Service
 
 [![CI](https://github.com/luizcurti/nodejs-serverless/actions/workflows/ci.yml/badge.svg)](https://github.com/luizcurti/nodejs-serverless/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/badge/node-20.x-green.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-24.x-green.svg)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 
@@ -31,7 +31,7 @@ More diagrams (source in [`docs/mmd`](docs/mmd), rendered in [`docs/img`](docs/i
 
 ## Requirements
 
-- Node.js 20.x
+- Node.js 24.x
 - Yarn (the project is developed and locked against Yarn 1 / `yarn.lock`)
 - Docker and Docker Compose (for LocalStack-based local dev, integration tests, and Docker validation)
 - [Terraform](https://developer.hashicorp.com/terraform) >= 1.6 and an AWS account (only needed to deploy)
@@ -93,7 +93,7 @@ docker compose logs -f
 yarn docker:down
 ```
 
-The `Dockerfile` uses `node:20-bookworm-slim` (Debian), not `node:20-alpine`: the Chromium binary bundled by `@sparticuz/chromium` is glibc-linked and cannot run on Alpine's musl libc. It also installs the small set of shared libraries (`libnss3`, `libatk-bridge2.0-0`, etc.) that headless Chromium needs at runtime.
+The `Dockerfile` uses `node:24-bookworm-slim` (Debian), not `node:24-alpine`: the Chromium binary bundled by `@sparticuz/chromium` is glibc-linked and cannot run on Alpine's musl libc. It also installs the small set of shared libraries (`libnss3`, `libatk-bridge2.0-0`, etc.) that headless Chromium needs at runtime.
 
 The bundled Chromium binary is **x86_64-only** (matching this service's default AWS Lambda architecture). On an Apple Silicon / arm64 machine, build and run the `app` image with `--platform linux/amd64` (Docker will emulate it); GitHub Actions' `ubuntu-latest` runners are x86_64 natively, so CI needs no such flag.
 
@@ -210,7 +210,7 @@ State is local by default (`infra/terraform.tfstate`, gitignored) — fine for a
 - **Terraform over Serverless Framework**: Serverless Framework v4 requires an interactive login / license key even for fully local runs (`serverless offline`) — a real friction point for local dev and CI. Terraform has no such requirement; local dev now runs on a plain, dependency-free HTTP adapter instead of a hosted framework CLI.
 - **API Gateway HTTP API, not REST API**: simpler and cheaper in Terraform for a plain Lambda-proxy API with no custom authorizers. `payload_format_version = "1.0"` is used so Lambda still receives the classic event shape the handlers are already written against — no handler code changes were needed.
 - **Two S3 buckets**: the certificate bucket is intentionally public-read (the API returns direct S3 URLs); Lambda deployment packages go to a separate, private bucket so application source code is never exposed by the same public-read policy.
-- **Chromium stack**: migrated from the unmaintained `chrome-aws-lambda` (2021, bundled Chromium ~92, most of the project's known CVEs traced back to it) to `@sparticuz/chromium` + current `puppeteer-core`, pinned to versions matching Chromium 143 and Node ≥20.11 to stay compatible with the `nodejs20.x` Lambda runtime.
+- **Chromium stack**: migrated from the unmaintained `chrome-aws-lambda` (2021, bundled Chromium ~92, most of the project's known CVEs traced back to it) to `@sparticuz/chromium` + current `puppeteer-core`, pinned to versions matching Chromium 143 and Node ≥20.11 to stay compatible with the `nodejs24.x` Lambda runtime.
 - **LocalStack pinned to `4.0.3`**: newer images require an auth token to boot at all, even for the free DynamoDB/S3 services this project uses.
 - **Debian over Alpine for the Dockerfile**: required for the glibc-linked Chromium binary; see the Docker section above.
 - **No framework-level abstractions**: two Lambda handlers, one shared DynamoDB client, no repository/service/DI layers — the domain (validate → read/write one table → optionally render a PDF → upload one object) doesn't warrant them.
