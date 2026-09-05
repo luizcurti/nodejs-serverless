@@ -93,7 +93,7 @@ resource "aws_lambda_function" "generate_certificate" {
   function_name = "${var.project_name}-generateCertificate"
   role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs24.x"
   timeout       = var.generate_certificate_timeout
   memory_size   = var.lambda_memory_size
 
@@ -112,7 +112,7 @@ resource "aws_lambda_function" "verify_certificate" {
   function_name = "${var.project_name}-verifyCertificate"
   role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs24.x"
   timeout       = var.verify_certificate_timeout
   memory_size   = var.lambda_memory_size
 

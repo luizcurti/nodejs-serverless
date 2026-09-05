@@ -1,6 +1,6 @@
-## node:20-alpine is intentionally not used here: @sparticuz/chromium ships a
+## node:24-alpine is intentionally not used here: @sparticuz/chromium ships a
 ## glibc-linked Chromium binary, which cannot run on Alpine's musl libc.
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 
 # Shared libraries required by the headless Chromium binary bundled in @sparticuz/chromium.
 RUN apt-get update && apt-get install -y --no-install-recommends \

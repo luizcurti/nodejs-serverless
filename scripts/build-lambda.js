@@ -46,7 +46,7 @@ function build(fn) {
     `src/functions/${fn.name}.ts`,
     '--bundle',
     '--platform=node',
-    '--target=node20',
+    '--target=node24',
     '--format=cjs',
     '--sourcemap',
     `--outfile=${path.join(outDir, 'index.js')}`,
